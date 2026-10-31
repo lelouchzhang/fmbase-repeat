@@ -19,15 +19,15 @@ export interface Organization {
 
 export interface OrganizationMember {
   id: string;
-  oId: string;
-  uId: string;
+  organizationId: string;
+  userId: string;
   role: RoleInOrganization;
   createdAt: string;
 }
 
 export interface Project {
   id: string;
-  oId: string;
+  organizationId: string;
   name: string;
   slug: string;
   databaseSchema: string;
@@ -51,4 +51,9 @@ export interface LoginInput {
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface JwtPayload {
+  sub: string;
+  email: string;
 }

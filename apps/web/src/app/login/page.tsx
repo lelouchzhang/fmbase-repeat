@@ -39,15 +39,26 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!state?.fieldErrors) return;
+    form.clearErrors();
 
-    for (const [field, messages] of Object.entries(state.fieldErrors)) {
-      form.setError(field as keyof LoginFormValues, {
+    if (state.fieldErrors) {
+      for (const [field, messages] of Object.entries(state.fieldErrors)) {
+        if (messages?.length) {
+          form.setError(field as keyof LoginFormValues, {
+            type: "server",
+            message: messages[0],
+          });
+        }
+      }
+    }
+
+    if (state.error) {
+      form.setError("root.server", {
         type: "server",
-        message: messages[0],
+        message: state.error,
       });
     }
-  }, [state, form]);
+  }, [form, state]);
 
   return (
     <div className="min-h flex items-center justify-center bg-muted/40 px-4 py-12">
@@ -57,9 +68,9 @@ export default function LoginPage() {
           <CardDescription>Sign in to your FMBase account</CardDescription>
         </CardHeader>
         <CardContent>
-          {state.error && (
+          {form.formState.errors.root?.server && (
             <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 mb-4">
-              {state.error}
+              {form.formState.errors.root.server.message}
             </div>
           )}
           <form

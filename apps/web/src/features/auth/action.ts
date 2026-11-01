@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 
 export type AuthActionState = {
   error?: string;
-  fieldErrors?: Record<string, string[]>;
+  fieldErrors?: Record<string, string[] | undefined>;
 };
 
 export async function authAction(

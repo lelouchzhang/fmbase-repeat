@@ -39,13 +39,21 @@ export default function RegisterPage() {
     },
   });
   useEffect(() => {
-    if (!state?.fieldErrors) return;
+    if (state.fieldErrors) {
+      for (const [field, messages] of Object.entries(state.fieldErrors)) {
+        if (messages?.length) {
+          form.setError(field as keyof RegisterFormValues, {
+            type: "server",
+            message: messages[0],
+          });
+        }
+      }
+    }
 
-    for (const [field, messages] of Object.entries(state.fieldErrors)) {
-      form.setError(field as keyof RegisterFormValues, {
+    if (state.error) {
+      form.setError("root.server", {
         type: "server",
-        message: messages[0],
-        // types
+        message: state.error,
       });
     }
   }, [form, state]);
@@ -58,9 +66,9 @@ export default function RegisterPage() {
           <CardDescription>Start building with FMBase</CardDescription>
         </CardHeader>
         <CardContent>
-          {state.error && (
+          {form.formState.errors.root?.server && (
             <div className="bg-destructive/10 text-destructive text-sm rounded-lg px-4 py-3 mb-4">
-              {state.error}
+              {form.formState.errors.root.server.message}
             </div>
           )}
 

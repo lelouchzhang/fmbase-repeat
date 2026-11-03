@@ -57,3 +57,13 @@ export interface JwtPayload {
   sub: string;
   email: string;
 }
+
+export interface CreateOrganizationInput {
+  name: string;
+}
+
+export interface OrganizationWithMeta extends Organization {
+  membersCount: number;
+  projectsCount: number;
+  role: RoleInOrganization;
+}

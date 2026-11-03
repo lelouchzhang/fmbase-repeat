@@ -3,7 +3,7 @@ import { organizations } from './organizations.js';
 
 export const projects = pgTable('projects', {
   id: uuid().primaryKey().defaultRandom(),
-  organizationsId: uuid()
+  organizationId: uuid()
     .notNull()
     .references(() => organizations.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),

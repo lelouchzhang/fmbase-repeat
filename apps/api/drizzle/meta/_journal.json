@@ -8,6 +8,13 @@
       "when": 1793108560600,
       "tag": "0000_organic_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793693410929,
+      "tag": "0001_majestic_true_believers",
+      "breakpoints": true
     }
   ]
 }

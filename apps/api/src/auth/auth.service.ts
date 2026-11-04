@@ -87,31 +87,35 @@ export class AuthService {
     if (existing.length > 0) {
       throw new ConflictException('Email already exists');
     }
-
+    // bcrypt.hash：耗时且不涉及数据库，事务开始前执行更好
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    const [user] = await this.drizzle.db
-      .insert(users)
-      .values({
-        email: dto.email,
-        provider: 'email',
-        passwordHash,
-        name: dto.name,
-      })
-      .returning();
+    const user = await this.drizzle.db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({
+          email: dto.email,
+          provider: 'email',
+          passwordHash,
+          name: dto.name,
+        })
+        .returning();
 
-    const [organization] = await this.drizzle.db
-      .insert(organizations)
-      .values({
-        name: `${dto.name}'s Organization`,
-        slug: this.generateOrganizationSlug(dto.name),
-      })
-      .returning();
-    await this.drizzle.db.insert(organizationMembers).values({
-      organizationId: organization.id,
-      userId: user.id,
-      role: 'admin',
+      const [organization] = await tx
+        .insert(organizations)
+        .values({
+          name: `${dto.name}'s Organization`,
+          slug: this.generateOrganizationSlug(dto.name),
+        })
+        .returning();
+      await tx.insert(organizationMembers).values({
+        organizationId: organization.id,
+        userId: user.id,
+        role: 'admin',
+      });
+      return user;
     });
+
     return this.signTokens(user.id, user.email);
   }
 
@@ -166,18 +170,8 @@ export class AuthService {
     provider: 'google' | 'github';
     providerUserId: string;
   }): Promise<AuthTokens> {
-    let [user] = await this.drizzle.db
-      .select()
-      .from(users)
-      .where(
-        and(
-          eq(users.provider, profile.provider),
-          eq(users.providerUserId, profile.providerUserId),
-        ),
-      )
-      .limit(1);
-    if (!user) {
-      const [newUser] = await this.drizzle.db
+    const user = await this.drizzle.db.transaction(async (tx) => {
+      let [user] = await tx
         .insert(users)
         .values({
           email: profile.email,
@@ -186,9 +180,31 @@ export class AuthService {
           provider: profile.provider,
           providerUserId: profile.providerUserId,
         })
+        .onConflictDoNothing({
+          target: [users.provider, users.providerUserId],
+        })
         .returning();
-      user = newUser;
-      const [organization] = await this.drizzle.db
+
+      if (!user) {
+        [user] = await tx
+          .select()
+          .from(users)
+          .where(
+            and(
+              eq(users.provider, profile.provider),
+              eq(users.providerUserId, profile.providerUserId),
+            ),
+          )
+          .limit(1);
+
+        if (!user) {
+          throw new Error('OAuth user was not found after conflict');
+        }
+
+        return user;
+      }
+
+      const [organization] = await tx
         .insert(organizations)
         .values({
           name: `${profile.name}'s Organization`,
@@ -196,12 +212,15 @@ export class AuthService {
         })
         .returning();
 
-      await this.drizzle.db.insert(organizationMembers).values({
+      await tx.insert(organizationMembers).values({
         organizationId: organization.id,
         userId: user.id,
         role: 'admin',
       });
-    }
+
+      return user;
+    });
+
     return this.signTokens(user.id, user.email);
   }
 

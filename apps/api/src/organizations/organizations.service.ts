@@ -76,8 +76,8 @@ export class OrganizationsService {
     return row;
   }
 
+  // 事务：all-or-nothing，串行，一起通过或一起回滚。tx 本身不是事务，也不是连接。它是一个**事务对象**，内部持有一个"指向当前事务所用的那条数据库连接"的引用，并暴露了 .insert() / .select() 等方法。
   async createOrganization(dto: CreateOrganizationDto, userId: string) {
-    // todo: 事务？ findout db.transaction and implement other else
     return await this.drizzleService.db.transaction(async (tx) => {
       const [organization] = await tx
         .insert(organizations)

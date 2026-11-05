@@ -4,6 +4,7 @@ import { AUTH_INTENT } from "@fmbase/constants";
 import { authServerSchema } from "./server.schema";
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { applyAuthCookiesFromResponse } from "./cookie";
 
 export type AuthActionState = {
   error?: string;
@@ -70,6 +71,6 @@ export async function authAction(
     }
   }
 
-  //todo: applyCookiesToResponse
+  await applyAuthCookiesFromResponse(res);
   redirect("/dashboard");
 }

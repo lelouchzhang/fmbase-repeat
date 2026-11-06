@@ -13,7 +13,7 @@ export async function retrieveMyOrganizationsFromApi(): Promise<
       "/organizations",
       {
         headers: {
-          Cookie: `${COOKIE_KEYS.ACCESS_TOKEN} = ${token}`,
+          Cookie: `${COOKIE_KEYS.ACCESS_TOKEN}=${token}`,
         },
       },
     );
@@ -28,7 +28,7 @@ export async function retrieveOrganizationsBySlugFromApi(slug: string) {
   try {
     const { data } = await apiClient.get(`/organization/${slug}`, {
       headers: {
-        Cookie: `${COOKIE_KEYS.ACCESS_TOKEN} = ${token}`,
+        Cookie: `${COOKIE_KEYS.ACCESS_TOKEN}=${token}`,
       },
     });
     return data;

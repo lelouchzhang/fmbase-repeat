@@ -4,6 +4,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 // import { TopNav } from "@/components/top-nav";
 import { retrieveMyOrganizationsFromApi } from "@/features/organization/helper.server";
 
+export const instant = false;
+
 async function getCurrentUser() {
   const token = await retrieveTokenFromCookie();
 

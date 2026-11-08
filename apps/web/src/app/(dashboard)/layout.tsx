@@ -1,8 +1,8 @@
 import { retrieveTokenFromCookie } from "@/libs/server-utils";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-// import { AppSidebar } from "@/components/app-sidebar";
-// import { TopNav } from "@/components/top-nav";
+import { TopNav } from "@/components/top-nav";
 import { retrieveMyOrganizationsFromApi } from "@/features/organization/helper.server";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export const instant = false;
 
@@ -29,9 +29,9 @@ export default async function DashboardLayout({
   ]);
   return (
     <SidebarProvider>
-      {/* <AppSidebar organizations={organizations} user={user} /> */}
+      <AppSidebar organizations={organizations} user={user} />
       <SidebarInset>
-        {/* <TopNav /> */}
+        <TopNav />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>

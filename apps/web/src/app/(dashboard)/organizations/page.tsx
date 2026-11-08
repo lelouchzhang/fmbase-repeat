@@ -22,22 +22,25 @@ export default async function OrganizationsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Link
-          href="/organizations/org-slug/projects"
-          className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:bg-accent transition-colors"
-        >
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-            <Building2 size={18} className="text-muted-foreground" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-medium text-sm truncate">
-              {"ORGANIZATION NAME"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              0 projects · 0 members
-            </p>
-          </div>
-        </Link>
+        {organizations.map((o) => (
+          <Link
+            key={o.id}
+            href={`/organizations/${o.slug}/projects`}
+            className="flex items-center gap-4 p-5 rounded-xl border border-border bg-background hover:bg-accent transition-colors"
+          >
+            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <Building2 size={18} className="text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm truncate">{o.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {o.projectsCount}{" "}
+                {o.projectsCount === 1 ? "project" : "projects"} ·{" "}
+                {o.membersCount} {o.membersCount === 1 ? "member" : "members"}
+              </p>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

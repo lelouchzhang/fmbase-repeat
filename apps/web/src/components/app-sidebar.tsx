@@ -70,22 +70,22 @@ export function AppSidebar({ organizations, user }: AppSidebarProps) {
                   <SidebarMenuButton
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent"
-                  >
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                      <Building2 size={16} />
-                    </div>
-                    <div className="flex flex-col gap-0.5 leading-none">
-                      <span className="font-semibold">
-                        {currentOrganization.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {currentOrganization.role}
-                      </span>
-                    </div>
-                    <ChevronsUpDown className="ml-auto" />
-                  </SidebarMenuButton>
+                  />
                 }
-              ></DropdownMenuTrigger>
+              >
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Building2 size={16} />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-semibold">
+                    {currentOrganization.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {currentOrganization.role}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto" />
+              </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-[--radix-popper-anchor-width]"
                 align="start"
@@ -98,28 +98,28 @@ export function AppSidebar({ organizations, user }: AppSidebarProps) {
                         key={o.id}
                         href={`/organizations/${o.slug}/projects`}
                         className="flex items-center justify-between"
-                      >
-                        <span>{currentOrganization.name}</span>
-                        {params?.slug && <Check size={14} />}
-                      </Link>
+                      />
                     }
-                  ></DropdownMenuItem>
+                  >
+                    <span>{o.name}</span>
+                    {o.slug === params?.slug && <Check size={14} />}
+                  </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  render={<Link href="/organizations">All organizations</Link>}
-                ></DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/organizations" />}>
+                  All organizations
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   render={
                     <Link
                       href="/organizations/new"
                       className="flex items-center gap-1.5"
-                    >
-                      <Plus size={14} />
-                      New organization
-                    </Link>
+                    />
                   }
-                ></DropdownMenuItem>
+                >
+                  <Plus size={14} />
+                  New organization
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
@@ -142,13 +142,11 @@ export function AppSidebar({ organizations, user }: AppSidebarProps) {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={label}
-                      render={
-                        <Link href={href}>
-                          <Icon />
-                          <span>{label}</span>
-                        </Link>
-                      }
-                    ></SidebarMenuButton>
+                      render={<Link href={href} />}
+                    >
+                      <Icon />
+                      <span>{label}</span>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
@@ -167,38 +165,42 @@ export function AppSidebar({ organizations, user }: AppSidebarProps) {
                   <SidebarMenuButton
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent"
-                  >
-                    <Avatar className="size-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg">
-                        {(user.name ?? user.email).charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-0.5 leading-none">
-                      <span className="font-semibold">Account</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {user.name ?? "Account"}
-                      </span>
-                    </div>
-                    <ChevronsUpDown className="ml-auto" />
-                  </SidebarMenuButton>
+                  />
                 }
-              ></DropdownMenuTrigger>
+              >
+                <Avatar className="size-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg">
+                    {(user.name ?? user.email).charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-semibold">Account</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {user.name ?? "Account"}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto" />
+              </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-[--radix-popper-anchor-width]"
                 side="top"
                 align="start"
               >
-                <DropdownMenuItem
-                  render={<Link href="/settings">Settings</Link>}
-                ></DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/settings" />}>
+                  Settings
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onSelect={(event) => event.preventDefault()}
+                  // nativeButton={true}
+
                   render={
-                    <form action={signout} onSelect={(e) => e.preventDefault()}>
+                    <form
+                      action={signout}
+                      onSelect={(event) => event.preventDefault()}
+                    >
                       <button
                         type="submit"
-                        className="flex w-full items-center gap-1.5 text-destructive text-sm"
+                        className="flex items-center gap-1.5 text-destructive text-sm"
                       >
                         <LogOut size={14} />
                         Sign out

@@ -22,15 +22,11 @@ export function TopNav() {
           className="gap-1.5 font-normal"
           nativeButton={false}
           disabled
-          render={
-            <>
-              <span className="text-sm text-muted-foreground">
-                Select project
-              </span>
-              <ChevronsUpDown size={12} className="text-muted-foreground" />
-            </>
-          }
-        ></Button>
+          render={<span />}
+        >
+          <span className="text-sm text-muted-foreground">Select project</span>
+          <ChevronsUpDown size={12} className="text-muted-foreground" />
+        </Button>
       )}
     </header>
   );

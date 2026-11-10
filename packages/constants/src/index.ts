@@ -3,12 +3,12 @@ export const COOKIE_KEYS = {
   REFRESH_TOKEN: "fenm_refresh_token",
 } as const;
 
-export const ORGANIZATION_USER_ROLES = {
+export const ORGANIZATION_ROLES = {
   ADMIN: "admin",
   DEVELOPER: "developer",
 } as const;
 
-// FE
+export const ORG_ROLE_KEY = "role_in_organization";
 
 export const AUTH_INTENT = {
   LOGIN: "LOGIN",

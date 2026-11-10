@@ -67,3 +67,10 @@ export interface OrganizationWithMeta extends Organization {
   projectsCount: number;
   role: RoleInOrganization;
 }
+
+// invite
+export interface InvitePayload {
+  email: string;
+  organizationId: string;
+  organizationName: string;
+}

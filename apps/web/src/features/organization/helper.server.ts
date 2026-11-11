@@ -1,5 +1,8 @@
 import apiClient from "@/libs/axios";
-import { retrieveTokenFromCookie } from "@/libs/server-utils";
+import {
+  getLoginRedirectTarget,
+  retrieveTokenFromCookie,
+} from "@/libs/server-utils";
 import { COOKIE_KEYS } from "@fmbase/constants";
 import { OrganizationWithMeta } from "@fmbase/types";
 import { redirect } from "next/navigation";
@@ -22,7 +25,7 @@ export async function retrieveMyOrganizationsFromApi(): Promise<
     );
     return data;
   } catch {
-    redirect("/login");
+    redirect(await getLoginRedirectTarget());
   }
 }
 
@@ -41,6 +44,6 @@ export async function retrieveOrganizationsBySlugFromApi(slug: string) {
     );
     return data;
   } catch {
-    redirect("/login");
+    redirect(await getLoginRedirectTarget());
   }
 }

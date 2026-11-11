@@ -1,5 +1,6 @@
 "use server";
 
+import { sanitizeNext } from "@/libs/auth-redirect";
 import { AUTH_INTENT } from "@fmbase/constants";
 import { authServerSchema } from "./server.schema";
 import { z } from "zod";
@@ -16,14 +17,8 @@ export async function authAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const raw = Object.fromEntries(formData);
-  // 登录/注册成功后回跳目标（仅允许站内相对路径，防开放重定向）
-  const rawNext = raw.next;
-  const next =
-    typeof rawNext === "string" &&
-    rawNext.startsWith("/") &&
-    !rawNext.startsWith("//")
-      ? rawNext
-      : "/dashboard";
+  // 登录/注册成功后回跳目标，与中间件共用同一套白名单
+  const next = sanitizeNext(raw.next);
   const parsedData = authServerSchema.safeParse(raw);
 
   if (!parsedData.success) {

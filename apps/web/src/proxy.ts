@@ -1,10 +1,25 @@
 import { applyAuthCookiesToResponse } from "@/features/auth/cookie";
+import {
+  buildLoginPath,
+  PATHNAME_HEADER,
+  SEARCH_HEADER,
+} from "@/libs/auth-redirect";
+import { resolveProxyDecision } from "@/libs/proxy-policy";
 import { COOKIE_KEYS } from "@fmbase/constants";
-import { NextRequest, NextResponse } from "next/server";
 import * as jose from "jose";
+import { NextRequest, NextResponse } from "next/server";
 
-const AUTH_ROUTES = ["/login", "/register"];
-const PROTECTED_ROUTES = ["/dashboard", "/organizations"];
+/**
+ * proxy.ts 在做什么？
+ * 1. 拦截 config.matcher 命中的请求，用 jose 本地校验 access token。
+ * 2. 把「路径 + next + 会话状态」交给纯决策层 resolveProxyDecision。
+ * 3. 认证页上的已登录/可刷新会话一律回跳 next（或者fallback： /dashboard），不再写死 /dashboard。
+ * 4. 其他路径默认受保护（只有 /、/invite 与静态资源公开），会话失效时跳
+ *    /login?next=<当前路径+查询>，refresh 可用时先尝试刷新。
+ * 5. 放行时把当前 pathname/search 写入请求头，供服务端 redirect('/login')
+ *    重建 next；中间件无条件覆盖这两个头，客户端伪造无效。
+ * 6. next 的合法性由 libs/auth-redirect.ts 统一裁定，中间件不做第二套判断。
+ */
 
 async function refreshSession(
   refreshToken: string,
@@ -34,69 +49,76 @@ async function refreshSession(
   }
 }
 
-function matchesRoute(pathname: string, routes: string[]) {
-  return routes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
+/**
+ * Server Components 看不到请求的 URL，因此中间件会把当前 pathname/search 作为请求头转发过来。
+ * @returns 根据中间件解析请求url的结果，将路径和参数写入请求头。
+ */
+function passThrough(
+  request: NextRequest,
+  pathname: string,
+  search: string,
+): NextResponse {
+  // request.headers 在 Next.js 里是只读的,必须克隆一份才能set
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(PATHNAME_HEADER, pathname);
+  requestHeaders.set(SEARCH_HEADER, search);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+/**
+ * @example https://example.com/orders/detail?id=1&tab=2" => pathname="/orders/detail" search="?id=1&tab=2"
+ */
 export async function proxy(request: NextRequest) {
-  // 由NextJS扩展后的request拥有便利能力
-  const { pathname } = request.nextUrl;
-  // 读取被config.matcher拦截的请求中携带的cookies
+  const { pathname, search } = request.nextUrl;
   const accessToken = request.cookies.get(COOKIE_KEYS.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(COOKIE_KEYS.REFRESH_TOKEN)?.value;
-
-  const isAuthRoute = matchesRoute(pathname, AUTH_ROUTES);
-  const isProtectedRoute = matchesRoute(pathname, PROTECTED_ROUTES);
 
   let isValid = false;
   if (accessToken && process.env.JWT_ACCESS_SECRET) {
     try {
-      // 将字符串转换为字节数组
       const secret = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET);
-      // 使用密钥验证签名和有效期
       await jose.jwtVerify(accessToken, secret);
       isValid = true;
     } catch {}
   }
 
-  if (isAuthRoute && isValid) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  const decision = resolveProxyDecision({
+    pathname,
+    search,
+    next: request.nextUrl.searchParams.get("next"),
+    isAccessTokenValid: isValid,
+    hasRefreshToken: Boolean(refreshToken),
+  });
+
+  if (decision.kind === "redirect") {
+    return NextResponse.redirect(new URL(decision.to, request.url));
   }
 
-  if (isAuthRoute && refreshToken) {
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    if (await refreshSession(refreshToken, response)) return response;
-  }
-
-  if (isProtectedRoute && !isValid) {
-    if (refreshToken) {
-      const response = NextResponse.next();
-      if (await refreshSession(refreshToken, response)) {
-        return response;
-      }
+  if (decision.kind === "refresh-and-redirect") {
+    const response = NextResponse.redirect(new URL(decision.to, request.url));
+    if (refreshToken && (await refreshSession(refreshToken, response))) {
+      return response;
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    // 刷新失败不能假装已登录，留在认证页让用户重新登录。
+    return passThrough(request, pathname, search);
   }
-  return NextResponse.next();
+
+  if (decision.kind === "refresh-and-continue") {
+    const response = passThrough(request, pathname, search);
+    if (refreshToken && (await refreshSession(refreshToken, response))) {
+      return response;
+    }
+    return NextResponse.redirect(
+      new URL(buildLoginPath(pathname + search), request.url),
+    );
+  }
+
+  return passThrough(request, pathname, search);
 }
 
-// 匹配到 config.matcher 的路径才会被拦截
-// 排除静态资源 '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
-
+// 匹配到 config.matcher 的路径才会被拦截。
+// ADR: Next.js 的 matcher 解析器不允许捕获组，静态资源改由
+// auth-redirect.ts 的 isPublicPath() 放行；新增公开页面也加到那里。
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
-
-/**
- * proxy.ts在做什么?
- * 1. 拦截符合config.matcher的请求，进行会话验证和刷新逻辑处理(不推荐在此拦截和验证)
- * 2. 从NextJS增强版的request: NextRequest中读取cookies,并判断请求路径类型
- * 3. 使用jose进行本地的jwt access token验证
- * 4. 如果access验证通过且为auth路由,返回一个NextResponse.redirect重定向对象
- * 5. 如果access验证未通过但refresh存在,创建一个重定向响应对象，然后尝试刷新会话，如果刷新成功，则返回该重定向对象
- * 6. 如果access验证未通过且访问的是受保护的路由,尝试更新refresh token,如果更新成功，则返回该重定向对象,失败返回/login
- * 7. 其余情况,返回一个NextResponse.redirect重定向对象到登录页
- * 8. 如果请求路径属于不需要登录就能访问的路由,返回一个NextResponse.next()对象,继续处理请求
- */

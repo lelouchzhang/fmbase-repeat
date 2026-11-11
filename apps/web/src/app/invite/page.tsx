@@ -63,29 +63,41 @@ function InviteCard() {
       return;
     }
     const token = sessionStorage.getItem(INVITE_TOKEN_KEY);
-    if (!token) {
-      setInvalidToken(true);
-      setCheckingAuth(false);
-      return;
-    }
-    const info = decodeInviteToken(token);
-    if (!info) {
-      setInvalidToken(true);
-      sessionStorage.removeItem(INVITE_TOKEN_KEY);
-      setCheckingAuth(false);
-      return;
-    }
-    setInviteInfo(info);
+    const info = token ? decodeInviteToken(token) : null;
 
-    fetch(`${API_URL}/auth/me`, { credentials: "include" })
-      .then(async (res) => {
-        if (res.ok) {
-          const user = (await res.json()) as { email?: string };
-          setCurrentEmail(user.email ?? null);
-        }
-      })
-      .catch(() => setCurrentEmail(null))
-      .finally(() => setCheckingAuth(false));
+    let cancelled = false;
+    // 本地校验是纯计算，推迟到微任务更新状态，避免 effect 内同步 setState 造成级联渲染
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (!info) {
+        if (token) sessionStorage.removeItem(INVITE_TOKEN_KEY);
+        setInvalidToken(true);
+        setCheckingAuth(false);
+        return;
+      }
+      setInviteInfo(info);
+    });
+
+    if (info) {
+      fetch(`${API_URL}/auth/me`, { credentials: "include" })
+        .then(async (res) => {
+          if (cancelled) return;
+          if (res.ok) {
+            const user = (await res.json()) as { email?: string };
+            setCurrentEmail(user.email ?? null);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setCurrentEmail(null);
+        })
+        .finally(() => {
+          if (!cancelled) setCheckingAuth(false);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, router]);
 
   const handleAccept = useCallback(async () => {

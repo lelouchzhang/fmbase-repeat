@@ -12,6 +12,7 @@ import { Response } from 'express';
 import slugify from 'slugify';
 import { randomBytes } from 'crypto';
 import { RegisterDto } from './dto/register.dto.js';
+import { accounts } from '../db/schema/accounts.js';
 import { users } from '../db/schema/users.js';
 import { and, eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
@@ -95,11 +96,15 @@ export class AuthService {
         .insert(users)
         .values({
           email: dto.email,
-          provider: 'email',
-          passwordHash,
           name: dto.name,
         })
         .returning();
+
+      await tx.insert(accounts).values({
+        userId: user.id,
+        provider: 'email',
+        passwordHash,
+      });
 
       const [organization] = await tx
         .insert(organizations)
@@ -123,16 +128,26 @@ export class AuthService {
     const [user] = await this.drizzle.db
       .select()
       .from(users)
-      .where(and(eq(users.email, dto.email), eq(users.provider, 'email')))
+      .where(eq(users.email, dto.email))
       .limit(1);
-    if (!user || !user.passwordHash) {
+    if (!user) {
+      throw new UnauthorizedException('Email or password is incorrect');
+    }
+
+    const [account] = await this.drizzle.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, user.id), eq(accounts.provider, 'email')))
+      .limit(1);
+    if (!account?.passwordHash) {
       throw new UnauthorizedException(
         'Application not support this login method',
       );
     }
+
     const isPasswordValid = await bcrypt.compare(
       dto.password,
-      user.passwordHash,
+      account.passwordHash,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email or password is incorrect');
@@ -171,38 +186,61 @@ export class AuthService {
     providerUserId: string;
   }): Promise<AuthTokens> {
     const user = await this.drizzle.db.transaction(async (tx) => {
-      let [user] = await tx
+      // 1. 已有该 OAuth 凭证：直接登录
+      const [existingAccount] = await tx
+        .select()
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.provider, profile.provider),
+            eq(accounts.providerUserId, profile.providerUserId),
+          ),
+        )
+        .limit(1);
+
+      if (existingAccount) {
+        const [existingUser] = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, existingAccount.userId))
+          .limit(1);
+        if (!existingUser) {
+          throw new Error('Account references a missing user');
+        }
+        return existingUser;
+      }
+
+      // 2. 同邮箱已注册：把 OAuth 凭证挂到既有用户下（账号归并）
+      const [existingUser] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.email, profile.email))
+        .limit(1);
+
+      if (existingUser) {
+        await tx.insert(accounts).values({
+          userId: existingUser.id,
+          provider: profile.provider,
+          providerUserId: profile.providerUserId,
+        });
+        return existingUser;
+      }
+
+      // 3. 全新用户：user + account + 默认组织，单事务写入
+      const [newUser] = await tx
         .insert(users)
         .values({
           email: profile.email,
           name: profile.name,
           avatarUrl: profile.avatarUrl,
-          provider: profile.provider,
-          providerUserId: profile.providerUserId,
-        })
-        .onConflictDoNothing({
-          target: [users.provider, users.providerUserId],
         })
         .returning();
 
-      if (!user) {
-        [user] = await tx
-          .select()
-          .from(users)
-          .where(
-            and(
-              eq(users.provider, profile.provider),
-              eq(users.providerUserId, profile.providerUserId),
-            ),
-          )
-          .limit(1);
-
-        if (!user) {
-          throw new Error('OAuth user was not found after conflict');
-        }
-
-        return user;
-      }
+      await tx.insert(accounts).values({
+        userId: newUser.id,
+        provider: profile.provider,
+        providerUserId: profile.providerUserId,
+      });
 
       const [organization] = await tx
         .insert(organizations)
@@ -214,11 +252,11 @@ export class AuthService {
 
       await tx.insert(organizationMembers).values({
         organizationId: organization.id,
-        userId: user.id,
+        userId: newUser.id,
         role: 'admin',
       });
 
-      return user;
+      return newUser;
     });
 
     return this.signTokens(user.id, user.email);

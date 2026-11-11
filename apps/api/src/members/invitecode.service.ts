@@ -1,7 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InvitePayload } from '@fmbase/types';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { InvitePayload, JwtPayload } from '@fmbase/types';
 import { Resend } from 'resend';
 import { DrizzleService } from '../db/drizzle.service.js';
 import {
@@ -31,7 +35,6 @@ export class InvitecodeService {
 
     if (!organization) throw new BadRequestException('organization not found');
 
-    // 不可靠的判定方式
     const existingUser = await this.drizzleService.db
       .select({ id: users.id })
       .from(users)
@@ -62,13 +65,12 @@ export class InvitecodeService {
         organizationName: organization.name,
       } satisfies InvitePayload,
       {
-        secret: this.configService.get<string>('JWT_INVITE_SECRET'),
-        expiresIn: this.configService.get('JWT_INVITE_EXPIRES_IN'),
+        secret: this.configService.get<string>('INVITE_SECRET'),
+        expiresIn: this.configService.get('INVITE_EXPIRES_IN'),
       },
     );
 
-    // send email
-    const inviteUrl = `${this.configService.get<string>('API_URL')}/auth/invite/accept?token=${inviteToken}`;
+    const inviteUrl = `${this.configService.get<string>('WEB_URL')}/invite?token=${inviteToken}`;
 
     await this.resend.emails.send({
       from: 'onboarding@resend.dev',
@@ -93,63 +95,58 @@ export class InvitecodeService {
     };
   }
 
-  async acceptInvite(token: string) {
+  async acceptInvite(currentUser: JwtPayload, token: string) {
     let payload: InvitePayload;
 
     try {
       payload = this.JwtService.verify<InvitePayload>(token, {
-        secret: this.configService.get<string>('JWT_INVITE_SECRET'),
+        secret: this.configService.get<string>('INVITE_SECRET'),
       });
     } catch {
       throw new BadRequestException('invalid invite token');
     }
 
-    await this.drizzleService.db.transaction(async (tx) => {
-      // 拿到或创建用户
-      let [user] = await tx
-        .insert(users)
-        .values({
-          email: payload.email,
-          provider: 'email',
-        })
-        .onConflictDoNothing({ target: users.email })
-        .returning({
-          id: users.id,
-          email: users.email,
-        });
+    // 严格绑定：只有被邀请邮箱对应的登录身份才能领取授权
+    if (payload.email !== currentUser.email) {
+      throw new ForbiddenException(
+        'Invite email does not match your account email',
+      );
+    }
 
-      if (!user) {
-        [user] = await tx
-          .select({
-            id: users.id,
-            email: users.email,
-          })
-          .from(users)
-          .where(eq(users.email, payload.email))
-          .limit(1);
+    await this.drizzleService.db.transaction(async (tx) => {
+      const [organization] = await tx
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, payload.organizationId))
+        .limit(1);
+
+      if (!organization) {
+        throw new BadRequestException('organization not found');
       }
 
-      // 重构时删掉，直接用已登录的被邀请用户的userId写入oms
-      const result = await tx
-        .insert(organizationMembers)
-        .values({
-          organizationId: payload.organizationId,
-          userId: user.id,
-          role: 'developer',
-        })
-        .onConflictDoNothing({
-          target: [
-            organizationMembers.organizationId,
-            organizationMembers.userId,
-          ],
-          where: isNull(organizationMembers.removedAt),
-        })
-        .returning({ id: organizationMembers.id });
+      const existingMember = await tx
+        .select({ id: organizationMembers.id })
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, payload.organizationId),
+            eq(organizationMembers.userId, currentUser.sub),
+            isNull(organizationMembers.removedAt),
+          ),
+        )
+        .limit(1);
 
-      if (result.length === 0) {
+      if (existingMember.length > 0) {
         throw new BadRequestException('user already exists in organization');
       }
+
+      await tx.insert(organizationMembers).values({
+        organizationId: payload.organizationId,
+        userId: currentUser.sub,
+        role: 'developer',
+      });
     });
-    return { message: 'invite accepted', email: payload.email };
+
+    return { message: 'invite accepted' };
   }
 }

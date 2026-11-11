@@ -16,6 +16,14 @@ export async function authAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const raw = Object.fromEntries(formData);
+  // 登录/注册成功后回跳目标（仅允许站内相对路径，防开放重定向）
+  const rawNext = raw.next;
+  const next =
+    typeof rawNext === "string" &&
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("//")
+      ? rawNext
+      : "/dashboard";
   const parsedData = authServerSchema.safeParse(raw);
 
   if (!parsedData.success) {
@@ -72,5 +80,5 @@ export async function authAction(
   }
 
   await applyAuthCookiesFromResponse(res);
-  redirect("/dashboard");
+  redirect(next);
 }

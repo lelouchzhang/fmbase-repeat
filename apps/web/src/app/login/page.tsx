@@ -21,13 +21,24 @@ import { AUTH_INTENT } from "@fmbase/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "cn";
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [state, formAction, isPending] = useActionState(authAction, {});
 
   const form = useForm<LoginFormValues>({
@@ -83,6 +94,7 @@ export default function LoginPage() {
             }}
             className="space-y-4"
           >
+            <input type="hidden" name="next" value={next ?? "/dashboard"} />
             <FieldGroup>
               <Controller
                 name="email"
@@ -196,7 +208,7 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground mt-6">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"}
               className="font-medium text-foreground hover:underline"
             >
               Sign up

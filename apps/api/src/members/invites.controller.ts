@@ -12,9 +12,9 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { OrganizationRoleGuard } from '../common/guards/o-role.guard.js';
 import { RequireOrgRole } from '../common/decorators/require-o-role.js';
 import { AcceptInviteDto, InviteMemberDto } from './dto/member.dto.js';
-import { InvitecodeService } from './invitecode.service.js';
+import { InvitecodeService } from './invites.service.js';
 
-@Controller('orgs')
+@Controller('organizations')
 export class InvitesController {
   constructor(private invitecodeService: InvitecodeService) {}
 

@@ -13,7 +13,7 @@ import { MembersService } from './members.service.js';
 import { RequireOrgRole } from '../common/decorators/require-o-role.js';
 import { UpdateRoleInOrganizationDto } from './dto/member.dto.js';
 
-@Controller('orgs/:slug/members')
+@Controller('organizations/:slug/members')
 @UseGuards(JwtAuthGuard, OrganizationRoleGuard)
 export class MembersController {
   constructor(private membersService: MembersService) {}

@@ -9,7 +9,7 @@ import {
   organizations,
 } from '../db/schema/organizations.js';
 import { users } from '../db/schema/users.js';
-import { InvitecodeService } from './invitecode.service.js';
+import { InvitecodeService } from './invites.service.js';
 
 const INVITER_EMAIL = 'invite-test-inviter@example.com';
 const INVITEE_EMAIL = 'invite-test-invitee@example.com';
@@ -42,7 +42,9 @@ describe('InvitecodeService (login-gated accept)', () => {
     const [org] = await drizzle.db
       .select()
       .from(organizations)
-      .where(eq(organizations.name, `${TEST_ORG_PREFIX}Inviter's Organization`));
+      .where(
+        eq(organizations.name, `${TEST_ORG_PREFIX}Inviter's Organization`),
+      );
     return { inviter, org };
   }
 
@@ -66,9 +68,7 @@ describe('InvitecodeService (login-gated accept)', () => {
   });
 
   beforeEach(async () => {
-    await drizzle.db
-      .delete(users)
-      .where(like(users.email, 'invite-test%'));
+    await drizzle.db.delete(users).where(like(users.email, 'invite-test%'));
     await drizzle.db
       .delete(organizations)
       .where(like(organizations.name, `${TEST_ORG_PREFIX}%`));

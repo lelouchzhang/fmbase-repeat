@@ -74,3 +74,24 @@ export interface InvitePayload {
   organizationId: string;
   organizationName: string;
 }
+
+// temp
+export interface OrganizationMemberWithUser {
+  id: string;
+  role: RoleInOrganization;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface InviteMemberInput {
+  email: string;
+}
+
+export interface UpdateRoleInput {
+  role: RoleInOrganization;
+}

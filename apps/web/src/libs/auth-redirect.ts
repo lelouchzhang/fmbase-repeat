@@ -78,8 +78,8 @@ export function sanitizeNext(raw: unknown, fallback = DEFAULT_NEXT): string {
  * @returns 一个包含"next"的登录链接
  */
 export function buildLoginPath(currentPath: string): string {
-  const safe = sanitizeNext(currentPath, "");
-  return safe ? `${LOGIN_PATH}?next=${encodeURIComponent(safe)}` : LOGIN_PATH;
+  const next = sanitizeNext(currentPath, "");
+  return next ? `${LOGIN_PATH}?next=${encodeURIComponent(next)}` : LOGIN_PATH;
 }
 
 /**

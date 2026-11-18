@@ -15,6 +15,7 @@ export async function getLoginRedirectTarget(): Promise<string> {
 /**
  * 从 Cookie 读取 access token；缺失时立即跳转登录页（携带当前路径作为 next）。
  * 用于 Server Components / Server Actions 中调用受保护 API 之前的取令牌步骤。
+ * @returns cookie中的“access_token”的值
  */
 export async function retrieveTokenFromCookie(): Promise<string> {
   const cookieStore = await cookies();

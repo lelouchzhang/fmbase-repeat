@@ -16,3 +16,12 @@ export const AUTH_INTENT = {
 } as const;
 
 export type AuthIntent = (typeof AUTH_INTENT)[keyof typeof AUTH_INTENT];
+
+export const MEMBERS_INTENT = {
+  INVITE: "INVITE",
+  UPDATE_ROLE: "UPDATE_ROLE",
+  REMOVE: "REMOVE",
+} as const;
+
+export type MembersIntent =
+  (typeof MEMBERS_INTENT)[keyof typeof MEMBERS_INTENT];

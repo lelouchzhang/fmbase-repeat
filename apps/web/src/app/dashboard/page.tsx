@@ -2,7 +2,6 @@ import { retrieveMyOrganizationsFromApi } from "@/features/organization/helper.s
 import { redirect } from "next/navigation";
 
 export const instant = false;
-
 export default async function DashboardPage() {
   const organizations = await retrieveMyOrganizationsFromApi();
 

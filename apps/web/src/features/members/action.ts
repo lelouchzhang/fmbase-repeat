@@ -1,3 +1,4 @@
+"use server";
 import { retrieveTokenFromCookie } from "@/libs/server-utils";
 import { membersServerSchema } from "./server.schema";
 import { z } from "zod";
@@ -11,11 +12,11 @@ export type MembersActionState = {
 };
 
 export async function membersAction(
+  { slug }: { slug: string },
   _prev: MembersActionState,
   formdata: FormData,
-  { slug }: { slug: string },
-) {
-  const raw = Object.entries(formdata);
+): Promise<MembersActionState> {
+  const raw = Object.fromEntries(formdata);
   const parsedData = membersServerSchema.safeParse(raw);
 
   if (!parsedData.success) {
@@ -31,7 +32,7 @@ export async function membersAction(
     switch (intent) {
       case MEMBERS_INTENT.INVITE: {
         await apiClient.post(
-          `/organizations/${slug}/invite`,
+          `/organizations/${slug}/invites`,
           { email: (data as { email: string }).email },
           { headers: { Cookie: `${COOKIE_KEYS.ACCESS_TOKEN}=${token}` } },
         );

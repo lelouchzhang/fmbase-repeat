@@ -263,7 +263,7 @@ export class AuthService {
   }
 
   // Google OAuth
-  getGoogleAuthUrl() {
+  getGoogleAuthUrl(next?: string) {
     const params = new URLSearchParams({
       client_id: this.config.get<string>('GOOGLE_CLIENT_ID') ?? '',
       redirect_uri: this.config.get<string>('GOOGLE_CALLBACK_URL') ?? '',
@@ -271,6 +271,7 @@ export class AuthService {
       scope: 'openid email profile',
       access_type: 'offline',
     });
+    if (next) params.set('state', encodeURIComponent(next));
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
@@ -319,12 +320,13 @@ export class AuthService {
   }
 
   // Github OAuth
-  getGithubAuthUrl() {
+  getGithubAuthUrl(next?: string) {
     const params = new URLSearchParams({
       client_id: this.config.get<string>('GITHUB_CLIENT_ID')!,
       redirect_uri: this.config.get<string>('GITHUB_CALLBACK_URL')!,
       scope: 'read:user user:email',
     });
+    if (next) params.set('state', encodeURIComponent(next));
 
     return `https://github.com/login/oauth/authorize?${params.toString()}`;
   }

@@ -1,3 +1,4 @@
+"use server";
 import { buildLoginPath, currentPathFromHeaders } from "@/libs/auth-redirect";
 import { COOKIE_KEYS } from "@fmbase/constants";
 import { cookies, headers } from "next/headers";

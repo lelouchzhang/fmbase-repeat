@@ -70,7 +70,7 @@ describe('Invites flow (e2e)', () => {
     expect(org).toBeDefined();
 
     const sendRes = await request(app.getHttpServer())
-      .post(`/api/orgs/${org.slug}/invites`)
+      .post(`/api/organizations/${org.slug}/invites`)
       .set('Cookie', inviterCookie)
       .send({ email: inviteeEmail });
     expect(sendRes.status).toBe(200);
@@ -88,14 +88,14 @@ describe('Invites flow (e2e)', () => {
     );
 
     const acceptRes = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', inviteeCookie)
       .send({ token });
     expect(acceptRes.status).toBe(200);
     expect(acceptRes.body.message).toBe('invite accepted');
 
     const membersRes = await request(app.getHttpServer())
-      .get(`/api/orgs/${org.slug}/members`)
+      .get(`/api/organizations/${org.slug}/members`)
       .set('Cookie', inviterCookie);
     expect(membersRes.status).toBe(200);
     const inviteeMember = membersRes.body.find(
@@ -123,7 +123,7 @@ describe('Invites flow (e2e)', () => {
     );
 
     const res = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', otherCookie)
       .send({ token });
     expect(res.status).toBe(403);
@@ -131,7 +131,7 @@ describe('Invites flow (e2e)', () => {
 
   it('rejects accept without login (401)', async () => {
     const res = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .send({ token: 'whatever-token' });
     expect(res.status).toBe(401);
   });
@@ -139,7 +139,7 @@ describe('Invites flow (e2e)', () => {
   it('rejects accept with invalid token (400)', async () => {
     const inviteeCookie = await register(`e2e-invitee3-${run}@example.com`);
     const res = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', inviteeCookie)
       .send({ token: 'not-a-valid-token' });
     expect(res.status).toBe(400);
@@ -163,13 +163,13 @@ describe('Invites flow (e2e)', () => {
     );
 
     const first = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', inviteeCookie)
       .send({ token });
     expect(first.status).toBe(200);
 
     const second = await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', inviteeCookie)
       .send({ token });
     expect(second.status).toBe(400);
@@ -192,12 +192,12 @@ describe('Invites flow (e2e)', () => {
       { secret: process.env.INVITE_SECRET, expiresIn: '24h' } as never,
     );
     await request(app.getHttpServer())
-      .post('/api/orgs/invites/accept')
+      .post('/api/organizations/invites/accept')
       .set('Cookie', developerCookie)
       .send({ token });
 
     const res = await request(app.getHttpServer())
-      .post(`/api/orgs/${org.slug}/invites`)
+      .post(`/api/organizations/${org.slug}/invites`)
       .set('Cookie', developerCookie)
       .send({ email: `e2e-new5-${run}@example.com` });
     expect(res.status).toBe(403);

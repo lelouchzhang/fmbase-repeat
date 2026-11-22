@@ -73,13 +73,13 @@ export class InvitecodeService {
     const inviteUrl = `${this.configService.get<string>('WEB_URL')}/invite?token=${inviteToken}`;
 
     await this.resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'test@714258.xyz',
       to: email,
-      subject: `You've been invited to join ${organization.name} on Supavolt`,
+      subject: `You've been invited to join ${organization.name} on 分苗base`,
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
           <h2>You're invited to join ${organization.name}</h2>
-          <p>Someone has invited you to collaborate on Supavolt.</p>
+          <p>Someone has invited you to collaborate on 分苗base.</p>
           <a
             href="${inviteUrl}"
             style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 16px 0;">

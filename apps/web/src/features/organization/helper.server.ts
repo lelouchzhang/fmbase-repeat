@@ -11,8 +11,8 @@ import { connection } from "next/server";
 export async function retrieveMyOrganizationsFromApi(): Promise<
   OrganizationWithMeta[]
 > {
-  const token = await retrieveTokenFromCookie();
   await connection();
+  const token = await retrieveTokenFromCookie();
   try {
     const { data } = await apiClient.get<OrganizationWithMeta[]>(
       `/organizations`,
@@ -30,8 +30,8 @@ export async function retrieveMyOrganizationsFromApi(): Promise<
 }
 
 export async function retrieveOrganizationsBySlugFromApi(slug: string) {
-  const token = await retrieveTokenFromCookie();
   await connection();
+  const token = await retrieveTokenFromCookie();
   try {
     const { data } = await apiClient.get<OrganizationWithMeta>(
       `/organizations/${slug}`,

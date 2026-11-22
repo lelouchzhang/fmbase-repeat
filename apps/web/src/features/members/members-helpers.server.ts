@@ -3,11 +3,13 @@ import { retrieveTokenFromCookie } from "@/libs/server-utils";
 import { COOKIE_KEYS } from "@fmbase/constants";
 import { OrganizationMemberWithUser } from "@fmbase/types";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 export async function retrieveMembersFromApi(
   slug: string,
 ): Promise<OrganizationMemberWithUser[]> {
   const token = await retrieveTokenFromCookie();
+  await connection();
 
   try {
     const { data } = await apiClient.get<OrganizationMemberWithUser[]>(

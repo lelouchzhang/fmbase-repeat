@@ -12,6 +12,7 @@ import { cn } from "cn";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { signout } from "@/features/auth/signout";
 
 const INVITE_TOKEN_KEY = "fmbase_invite_token";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -109,7 +110,7 @@ function InviteCard() {
     setAccepting(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/orgs/invites/accept`, {
+      const res = await fetch(`${API_URL}/organizations/invites/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -140,7 +141,7 @@ function InviteCard() {
             {invalidToken
               ? "This invite link is invalid or has expired."
               : inviteInfo
-                ? `Join ${inviteInfo.organizationName} on FMBase`
+                ? `Join ${inviteInfo.organizationName} on 分苗base`
                 : "Loading invite..."}
           </CardDescription>
         </CardHeader>
@@ -220,15 +221,16 @@ function InviteCard() {
                     with that email, or ask the admin to re-invite{" "}
                     {currentEmail}.
                   </div>
-                  <Link
-                    href="/login?next=/invite"
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "lg" }),
-                      "w-full",
-                    )}
-                  >
-                    Switch account
-                  </Link>
+                  <form action={signout}>
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                    >
+                      Switch account
+                    </Button>
+                  </form>
                 </>
               )}
 

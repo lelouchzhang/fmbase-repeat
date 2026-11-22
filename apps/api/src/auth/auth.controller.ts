@@ -26,7 +26,6 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
-    private jwtService: JwtService,
   ) {}
 
   @Post('register')
@@ -82,35 +81,52 @@ export class AuthController {
 
   @Get('google')
   @Redirect()
-  GoogleLogin() {
+  GoogleLogin(@Query('next') next?: string) {
     return {
-      url: this.authService.getGoogleAuthUrl(),
+      url: this.authService.getGoogleAuthUrl(next),
     };
   }
 
   @Get('google/callback')
-  async googleCallback(@Query('code') code: string, @Res() res: Response) {
+  async googleCallback(
+    @Query('code') code: string,
+    @Query('state') state: string | undefined,
+    @Res() res: Response,
+  ) {
     const tokens = await this.authService.handleGoogleCallback(code);
     this.authService.setCookies(res, tokens);
-    return res.redirect(
-      `${this.configService.get<string>('WEB_URL')}/dashboard`,
-    );
+    return res.redirect(this.webRedirectUrl(state));
   }
 
   @Get('github')
   @Redirect()
-  githubLogin() {
+  githubLogin(@Query('next') next?: string) {
     return {
-      url: this.authService.getGithubAuthUrl(),
+      url: this.authService.getGithubAuthUrl(next),
     };
   }
 
   @Get('github/callback')
-  async githubCallback(@Query('code') code: string, @Res() res: Response) {
+  async githubCallback(
+    @Query('code') code: string,
+    @Query('state') state: string | undefined,
+    @Res() res: Response,
+  ) {
     const tokens = await this.authService.handleGithubCallback(code);
     this.authService.setCookies(res, tokens);
-    return res.redirect(
-      `${this.configService.get<string>('WEB_URL')}/dashboard`,
-    );
+    return res.redirect(this.webRedirectUrl(state));
+  }
+
+  /**
+   * state 是不可信的外部输入：只放行站内相对路径，防止 open redirect。
+   */
+  private webRedirectUrl(state: string | undefined): string {
+    const webUrl = this.configService.get<string>('WEB_URL') ?? '';
+    if (!state) return `${webUrl}/dashboard`;
+    const safe = decodeURIComponent(state);
+    if (!safe.startsWith('/') || safe.startsWith('//') || safe.includes('\\')) {
+      return `${webUrl}/dashboard`;
+    }
+    return `${webUrl}${safe}`;
   }
 }

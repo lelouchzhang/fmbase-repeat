@@ -158,7 +158,7 @@ function LoginForm() {
           <div className="space-y-3">
             <Button variant="outline" size="lg" className="w-full">
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google${next ? `?next=${encodeURIComponent(next)}` : ""}`}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "lg" }),
                   "inline-flex items-center justify-center gap-2",
@@ -188,7 +188,7 @@ function LoginForm() {
 
             <Button variant="outline" size="lg" className="w-full">
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github${next ? `?next=${encodeURIComponent(next)}` : ""}`}
                 className={cn(
                   buttonVariants({ size: "lg", variant: "ghost" }),
                   "inline-flex items-center justify-center gap-2",

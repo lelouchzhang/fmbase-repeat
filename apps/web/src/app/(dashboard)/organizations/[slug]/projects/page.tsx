@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { retrieveOrganizationsBySlugFromApi } from "@/features/organization/helper.server";
 
-export const instant = false;
+export const instant = false
 export default async function ProjectsPage({
   params,
 }: {

@@ -186,7 +186,13 @@ export function AppSidebar({ organizations, user }: AppSidebarProps) {
                 side="top"
                 align="start"
               >
-                <DropdownMenuItem render={<Link href="/settings" />}>
+                <DropdownMenuItem
+                  render={
+                    <Link
+                      href={`/organizations/${params.slug}/settings/members`}
+                    />
+                  }
+                >
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

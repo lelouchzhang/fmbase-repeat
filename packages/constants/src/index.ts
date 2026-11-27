@@ -3,12 +3,12 @@ export const COOKIE_KEYS = {
   REFRESH_TOKEN: "fenm_refresh_token",
 } as const;
 
-export const ORGANIZATION_USER_ROLES = {
+export const ORGANIZATION_ROLES = {
   ADMIN: "admin",
   DEVELOPER: "developer",
 } as const;
 
-// FE
+export const ORG_ROLE_KEY = "role_in_organization";
 
 export const AUTH_INTENT = {
   LOGIN: "LOGIN",
@@ -16,3 +16,12 @@ export const AUTH_INTENT = {
 } as const;
 
 export type AuthIntent = (typeof AUTH_INTENT)[keyof typeof AUTH_INTENT];
+
+export const MEMBERS_INTENT = {
+  INVITE: "INVITE",
+  UPDATE_ROLE: "UPDATE_ROLE",
+  REMOVE: "REMOVE",
+} as const;
+
+export type MembersIntent =
+  (typeof MEMBERS_INTENT)[keyof typeof MEMBERS_INTENT];

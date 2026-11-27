@@ -1,4 +1,5 @@
 "use server";
+import { getLoginRedirectTarget } from "@/libs/server-utils";
 import { COOKIE_KEYS } from "@fmbase/constants";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -12,6 +13,6 @@ export async function signout() {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_KEYS.ACCESS_TOKEN);
   cookieStore.delete(COOKIE_KEYS.REFRESH_TOKEN);
-  // 最后重定向到/login
-  redirect("/login");
+  // 重新登录后回到登出前所在页面
+  redirect(await getLoginRedirectTarget());
 }

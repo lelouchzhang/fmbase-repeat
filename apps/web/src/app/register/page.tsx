@@ -4,6 +4,8 @@ import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { registerSchema } from "@/features/auth/client.schema";
 import { useActionState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { authAction } from "@/features/auth/action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -28,6 +30,16 @@ import { Input } from "@/components/ui/input";
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [state, formAction, isPending] = useActionState(authAction, {});
 
   const form = useForm<RegisterFormValues>({
@@ -82,6 +94,7 @@ export default function RegisterPage() {
             }}
             className="space-y-4"
           >
+            <input type="hidden" name="next" value={next ?? "/dashboard"} />
             <FieldGroup>
               <Controller
                 name="name"
@@ -168,7 +181,7 @@ export default function RegisterPage() {
           <div className="space-y-3">
             <Button variant="outline" size="lg" className="w-full">
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google${next ? `?next=${encodeURIComponent(next)}` : ""}`}
                 className={cn(
                   buttonVariants({ size: "lg", variant: "ghost" }),
                   "inline-flex items-center justify-center gap-2",
@@ -198,7 +211,7 @@ export default function RegisterPage() {
 
             <Button variant="outline" size="lg" className="w-full">
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github${next ? `?next=${encodeURIComponent(next)}` : ""}`}
                 className={cn(
                   buttonVariants({ size: "lg", variant: "ghost" }),
                   "inline-flex items-center justify-center gap-2",
@@ -219,7 +232,7 @@ export default function RegisterPage() {
           <p className="text-center text-sm text-muted-foreground mt-6">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
               className="font-medium text-foreground hover:underline"
             >
               Sign in
